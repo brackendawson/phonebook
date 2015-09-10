@@ -28,7 +28,7 @@ class PhoneBook():
 
 	@staticmethod
 	def list_all():
-		c = db.execute("SELECT surname, firstname, number, address FROM phonebook;")
+		c = db.execute("SELECT surname, firstname, number, address FROM phonebook ORDER BY surname ASC;")
 		data = []
 		for row in c:
 			data.append({"surname": row[0], "firstname": row[1], "number": row[2], "address": row[3]})

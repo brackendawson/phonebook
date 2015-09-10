@@ -5,7 +5,7 @@ URL = "http://localhost:8000/"
 
 class PhoneBookTest(unittest.TestCase):
 
-	def test_list_all(self):
+	def test_0_list_all(self):
 		#an empty database is an empty 204 response
 		r = requests.get(URL)
 		assert r.status_code == 204
@@ -22,15 +22,15 @@ class PhoneBookTest(unittest.TestCase):
 		#more entres are returned alphabetically by surname
 		text = json.dumps({"surname": "Dent", "firstname": "Arthur", "number": "01818118181"})
 		r = requests.post(URL + "create", data=text)
-		assert r.status_code == 200
+		assert 200 <= r.status_code < 300
 		r = requests.get(URL)
-		assert r.status_code == 200
+		assert 200 <= r.status_code < 300
 		backdata = json.loads(r.text)
 		assert backdata == [{"surname": "Dent", "firstname": "Arthur", "number": "01818118181", "address": ""},
 			{"surname": "Prefect", "firstname": "Ford", "number": "01818118181", "address": "Betelgeuse"}]
 
 
-	def test_add_entry(self):
+	def test_1_add_entry(self):
 		#add an antry and check it's in the output
 		entry = {"surname": "Beeblebrox", "firstname": "Zaphod", "number": "01818118182", "address": "Betelgeuse, Milky Way"}
 		text = json.dumps(entry)
@@ -117,7 +117,7 @@ class PhoneBookTest(unittest.TestCase):
 		assert r.status_code == 409
 		assert r.text == "Duplicate entry."
 
-	def test_remove_entry(self):
+	def test_1_remove_entry(self):
 		#there is no key and you need to say the whole entry you want to delete exactly right
 		#delete an nonexistant entry
 		entry = {"surname": "Gagarin", "firstname": "Uri", "number": "01818118187", "address": ""}
@@ -142,7 +142,7 @@ class PhoneBookTest(unittest.TestCase):
 		backdata = json.loads(r.text)
 		assert not entry in backdata
 	
-	def test_update_entry(self):
+	def test_1_update_entry(self):
 		#update an non-existing entry
 		entry = {"surname": "collins", "firstname": "michael ", "number": "01818118188",
 			"newsurname": "Collins", "newfirstname": "Michael", "newnumber": "01818118189", "newaddress": "Other side of the moon."}
@@ -187,7 +187,7 @@ class PhoneBookTest(unittest.TestCase):
 		assert r.status_code == 400
 		assert r.text == "Missing compulsory field."
 
-	def test_search_surname(self):
+	def test_1_search_surname(self):
 		entry1 = {"surname": "Lovell", "firstname": "Jim", "number": "01818118190"}
 		text = json.dumps(entry1)
 		r = requests.post(URL + "create", data=text)
@@ -245,14 +245,14 @@ class PhoneBookTest(unittest.TestCase):
 		assert r.status_code == 400
 		assert r.text == "Unsupported field."
 
-	def test_bad_url(self):
+	def test_1_bad_url(self):
 		entry = {"surname": "Lovell", "firstname": "Jack"}
 		text = json.dumps(entry)
 		r = requests.post(URL + "add", data=text)
 		assert r.status_code == 404
 		assert r.text == "Unknown action."
 
-	def test_http_head(self):
+	def test_1_http_head(self):
 		r = requests.head(URL)
 		assert r.status_code == 200
 		assert r.headers['content-type'] == "application/json"
@@ -260,7 +260,7 @@ class PhoneBookTest(unittest.TestCase):
 		assert 200 <= r.status_code < 300
 		assert r.headers['content-type'] == "application/json"
 
-	def test_non_utf_8(self):
+	def test_1_non_utf_8(self):
 		# "þÿ" (fe ff) is not valid in any utf-8 string
 		entry = {"surname": "kosþÿme", "": "κόσμε", "number": "01818118193", "address": ""}
 		text = json.dumps(entry)
