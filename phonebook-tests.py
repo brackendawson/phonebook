@@ -37,7 +37,7 @@ class PhoneBookTest(unittest.TestCase):
 		r = requests.post(URL + "create", data=text)
 		assert r.status_code == 201
 		r = requests.get(URL)
-		assert r.tatus_code == 200
+		assert r.status_code == 200 
 		backdata = json.loads(r.text)
 		assert entry in backdata
 
@@ -53,36 +53,38 @@ class PhoneBookTest(unittest.TestCase):
 
 		#test optional fields
 		#must fail
-		r = requests.post(URL, data=text)
+		r = requests.get(URL, data=text)
 		assert r.status_code == 200
 		count = len(json.loads(r.text))
 		text = json.dumps({"surname": "Hadfield", "firstname": "Chris", "number": "", "address": "Earth, Sol, Milky Way"})
-		r = requests.post(URL, data=text)
+		r = requests.post(URL + "create", data=text)
 		assert r.status_code == 400
 		assert r.text == "Missing compulsory field."
 		text = json.dumps({"surname": "", "firstname": "Chris", "number": "01818118184", "address": "Earth, Sol, Milky Way"})
-		r = requests.post(URL, data=text)
+		r = requests.post(URL + "create", data=text)
 		assert r.status_code == 400
 		assert r.text == "Missing compulsory field."
 		text = json.dumps({"surname": "Hadfield", "number": "01818118184", "address": "Earth, Sol, Milky Way"})
+		r = requests.post(URL + "create", data=text)
 		assert r.status_code == 400
 		assert r.text == "Missing compulsory field."
 		r = requests.get(URL)
-		assert t.status_code == 400
+		assert r.status_code == 200
 		assert count == len(json.loads(r.text)) #the above generated no additional entries in the phonebook
 		#must succeed
-		entry = {"surname": "Hadfield", "firstname": "Chris", "number": "+11818118184", "address": ""}
+		entry = {"surname": "Hadfield", "firstname": "Chris", "number": "+11818118184"}
 		text = json.dumps(entry)
 		r = requests.post(URL + "create", data=text)
-		assert r.status == 201
+		assert r.status_code == 201
 		r = requests.get(URL)
 		assert r.status_code == 200
 		backdata = json.loads(r.text)
+		entry = {"surname": "Hadfield", "firstname": "Chris", "number": "+11818118184", "address": ""}
 		assert entry in backdata
-		entry = {"surname": "Armstrong", "firstname": "Neil", "number": "01818118185"}
+		entry = {"surname": "Armstrong", "firstname": "Neil", "number": "01818118185", "address": ""}
 		text = json.dumps(entry)
 		r = requests.post(URL + "create", data=text)
-		assert r.status == 201
+		assert r.status_code == 201
 		r = requests.get(URL)
 		assert r.status_code == 200
 		backdata = json.loads(r.text)
@@ -92,18 +94,28 @@ class PhoneBookTest(unittest.TestCase):
 		entry = {"surname": "Aldrin", "firstname": "Buzz", "number": "01818118186"}
 		text = json.dumps(entry)
 		r = requests.post(URL + "create", data=text)
-		assert r.status == 201
-		r = requests.post(URL, data=text)
+		assert r.status_code == 201
+		r = requests.get(URL, data=text)
 		assert r.status_code == 200
 		count = len(json.loads(r.text))
-		entry = {"surname": "Aldrin", "firstname": "Buzz", "number": "01818118186", "address": ""} #I consider these to be duplicates
+		entry = {"surname": "Aldrin", "firstname": "Buzz", "number": "01818118186", "address": ""} #I consider these duplicates
 		text = json.dumps(entry)
 		r = requests.post(URL + "create", data=text)
 		assert r.status_code == 409
 		assert r.text == "Duplicate entry."
-		r = requests.post(URL, data=text)
+		r = requests.get(URL, data=text)
 		assert r.status_code == 200
 		assert count == len(json.loads(r.text)) #the duplicate cause no additional entry in the phonebook
+		entry = {"surname": "Aldrin", "firstname": "Buzz", "number": "01818118186", "address": "The Moon"} #Not a duplicate
+		text = json.dumps(entry)
+		r = requests.post(URL + "create", data=text)
+		assert r.status_code == 201
+		r = requests.get(URL, data=text)
+		assert r.status_code == 200
+		count = len(json.loads(r.text))
+		r = requests.post(URL + "create", data=text)
+		assert r.status_code == 409
+		assert r.text == "Duplicate entry."
 
 	def test_remove_entry(self):
 		#there is no key and you need to say the whole entry you want to delete exactly right
@@ -224,21 +236,80 @@ class PhoneBookTest(unittest.TestCase):
 		text = json.dumps(entry)
 		r = requests.post(URL + "search", data=text)
 		assert r.status_code == 400
-		assert t.test == "Unsupported field."
+		assert r.text == "Unsupported field."
 
 		#test an entry including an unspported field
 		entry = {"surname": "Lovell", "firstname": "Jack"}
 		text = json.dumps(entry)
 		r = requests.post(URL + "search", data=text)
 		assert r.status_code == 400
-		assert t.test == "Unsupported field."
+		assert r.text == "Unsupported field."
 
 	def test_bad_url(self):
 		entry = {"surname": "Lovell", "firstname": "Jack"}
 		text = json.dumps(entry)
 		r = requests.post(URL + "add", data=text)
 		assert r.status_code == 404
-		assert t.test == "Unknown action."
+		assert r.text == "Unknown action."
+
+	def test_http_head(self):
+		r = requests.head(URL)
+		assert r.status_code == 200
+		assert r.headers['content-type'] == "application/json"
+		r = requests.get(URL)
+		assert 200 <= r.status_code < 300
+		assert r.headers['content-type'] == "application/json"
+
+	def test_non_utf_8(self):
+		# "þÿ" (fe ff) is not valid in any utf-8 string
+		entry = {"surname": "kosþÿme", "": "κόσμε", "number": "01818118193", "address": ""}
+		text = json.dumps(entry)
+		r = requests.post(URL + "create", data=text)
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
+		entry = {"surname": "kosme", "": "κόσþÿμε", "number": "01818118193", "address": ""}
+		text = json.dumps(entry)
+		r = requests.post(URL + "create", data=text)
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
+		entry = {"surname": "kosme", "": "κόσμε", "number": "þÿ01818118193", "address": ""}
+		text = json.dumps(entry)
+		r = requests.post(URL + "create", data=text)
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
+		entry = {"surname": "kosme", "": "κόσμε", "number": "01818118193", "address": "þÿ"}
+		text = json.dumps(entry)
+		r = requests.post(URL + "create", data=text)
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
+		
+		#A good one or luck
+		entry = {"surname": "kosme", "": "κόσμε", "number": "01818118193", "address": ""}
+		text = json.dumps(entry)
+		r = requests.post(URL + "create", data=text)
+		assert r.status_code == 201		
+		r = requests.get(URL)
+		assert r.sttus_code == 200
+		backdata = json.loads(r.text)
+		assert entry in backdata
+		#now update it badly
+		entry = {"surname": "kosme", "": "κόσμε", "number": "01818118193", "address": "", "newsurname": "þÿ"}
+		text = json.dumps(entry)
+		r = requests.post(URL + "update", data=text)
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
+		#and search badly
+		entry = {"surname": "kosþÿme"}
+		text = json.dumps(entry)
+		r = requests.post(URL + "search", data=text)
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
+	
+	#truncate json
+
+	#not json
+
+	#bobby tables
 
 if __name__ == '__main__':
 	unittest.main()
