@@ -61,7 +61,35 @@ class PhoneBook():
 		if not c.fetchone() == (0,):
 			return(409, "Duplicate entry.");
 
-		db.execute("INSERT INTO phonebook (surname, firstname, number, address) VALUES (?, ?, ?, ?);", (surname, firstname, number, address))
+		c = db.execute("INSERT INTO phonebook (surname, firstname, number, address) VALUES (?, ?, ?, ?);", (surname, firstname, number, address))
+		return(201, "")
+
+	@staticmethod
+	def remove(data):
+		try:
+			entry = json.loads(data)
+		except ValueError:
+			return(400, "Bad request data.")
+		if not type(entry) is dict:
+			return(400, "Bad request data.")
+		try:
+			surname = entry["surname"]
+			firstname = entry["firstname"]
+			number = entry["number"]
+		except KeyError:
+			return(400, "Missing compulsory field.")
+		if not surname or not firstname or not number:
+			return(400, "Missing compulsory field.")
+		address = ""
+		if "address" in entry.keys():
+			address = entry["address"]
+		
+		#check entry exists
+		c = db.execute("SELECT EXISTS(SELECT 1 FROM phonebook WHERE surname=? AND firstname=? AND number=? AND address=? LIMIT 1);", (surname, firstname, number, address))
+		if not c.fetchone() == (1,):
+			return(404, "No such entry.");
+
+		c = db.execute("DELETE FROM phonebook WHERE surname=? AND firstname=? AND number=? AND address=?;", (surname, firstname, number, address))
 		return(201, "")
 
 class PhoneBookHTTPHandler(http.server.BaseHTTPRequestHandler):

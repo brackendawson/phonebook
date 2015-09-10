@@ -124,7 +124,7 @@ class PhoneBookTest(unittest.TestCase):
 		text = json.dumps(entry)
 		r = requests.post(URL + "remove", data=text)
 		assert r.status_code == 404
-		assert r.text == "No such entry"
+		assert r.text == "No such entry."
 		r = requests.get(URL)
 		assert r.status_code == 200
 		backdata = json.loads(r.text)
@@ -135,7 +135,9 @@ class PhoneBookTest(unittest.TestCase):
 		text = json.dumps(entry)
 		r = requests.post(URL + "create", data=text)
 		assert r.status_code == 201
-		r = requests.post(URL + "delete", data=text)
+		entry = {"surname": "Gagarin", "firstname": "Uri", "number": "01818118187", "address": ""}
+		text = json.dumps(entry)
+		r = requests.post(URL + "remove", data=text)
 		assert r.status_code == 201 #tricky one, but I'm saying 201 because it yeilds a change
 		r = requests.get(URL)
 		assert r.status_code == 200
