@@ -283,8 +283,8 @@ class PhoneBookTest(unittest.TestCase):
 		assert r.status_code == 400
 		assert r.text == "Bad request data."
 		
-		#A good one or luck
-		entry = {"surname": "kosme", "": "κόσμε", "number": "01818118193", "address": ""}
+		#A good one for luck
+		entry = {"surname": "kosme", "firstname": "κόσμε", "number": "01818118193", "address": ""}
 		text = json.dumps(entry)
 		r = requests.post(URL + "create", data=text)
 		assert r.status_code == 201		
@@ -293,7 +293,7 @@ class PhoneBookTest(unittest.TestCase):
 		backdata = json.loads(r.text)
 		assert entry in backdata
 		#now update it badly
-		entry = {"surname": "kosme", "": "κόσμε", "number": "01818118193", "address": "", "newsurname": "þÿ"}
+		entry = {"surname": "kosme", "firstname": "κόσμε", "number": "01818118193", "address": "", "newsurname": "þÿ"}
 		text = json.dumps(entry)
 		r = requests.post(URL + "update", data=text)
 		assert r.status_code == 400
@@ -305,9 +305,35 @@ class PhoneBookTest(unittest.TestCase):
 		assert r.status_code == 400
 		assert r.text == "Bad request data."
 	
-	#truncate json
+	def test_1_truncate_json(self):
+		entry = {"surname": "Bowman", "name": "David", "number": "01818118194", "address": ""}
+		text = json.dumps(entry)
+		r = requests.post(URL + "create", data=text[0:10])
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
+		r = requests.post(URL + "remove", data=text[0:3])
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
+		r = requests.post(URL + "update", data=text[0:14])
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
+		r = requests.post(URL + "search", data="")
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
 
-	#not json
+	def test_1_not_json(self):
+		r = requests.post(URL + "create", data="One wonders if one is writing too many tests.")
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
+		r = requests.post(URL + "remove", data="One cannot have too many tests.")
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
+		r = requests.post(URL + "update", data="Well, you can, but I don't think this is it.")
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
+		r = requests.post(URL + "search", data="lks{ejr}fl: ;iuwejrlkasjflkjSF")
+		assert r.status_code == 400
+		assert r.text == "Bad request data."
 
 	#bobby tables
 
