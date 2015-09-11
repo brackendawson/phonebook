@@ -91,6 +91,33 @@ class PhoneBook():
 
 		c = db.execute("DELETE FROM phonebook WHERE surname=? AND firstname=? AND number=? AND address=?;", (surname, firstname, number, address))
 		return(201, "")
+	
+	@staticmethod
+	def search(data):
+		try:
+			entry = json.loads(data)
+		except ValueError:
+			return(400, "Bad request data.")
+		if not type(entry) is dict:
+			return(400, "Bad request data.")
+		try:
+			surname = entry.pop("surname")
+		except KeyError:
+			return(400, "Missing compulsory field.")
+		if not surname:
+			return(400, "Missing compulsory field.")
+		if len(entry) > 0:
+			return(400, "Unsupported field.")
+		
+		#search
+		c = db.execute("SELECT surname, firstname, number, address FROM phonebook WHERE surname LIKE '%' || ? || '%' ORDER BY surname ASC;", (surname,))
+		data = []
+		for row in c:
+			data.append({"surname": row[0], "firstname": row[1], "number": row[2], "address": row[3]})
+		if len(data) == 0:
+			return(404, "")
+		return(200, json.dumps(data))
+		
 
 class PhoneBookHTTPHandler(http.server.BaseHTTPRequestHandler):
 

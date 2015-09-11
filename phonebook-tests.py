@@ -190,19 +190,19 @@ class PhoneBookTest(unittest.TestCase):
 		assert r.text == "Missing compulsory field."
 
 	def test_1_search_surname(self):
-		entry1 = {"surname": "Lovell", "firstname": "Jim", "number": "01818118190"}
+		entry1 = {"surname": "Lovell", "firstname": "Jim", "number": "01818118190", "address": ""}
 		text = json.dumps(entry1)
 		r = requests.post(URL + "create", data=text)
 		assert r.status_code == 201
-		entry2 = {"surname": "Lovell", "firstname": "Marilyn", "number": "01818118190"}
+		entry2 = {"surname": "Lovell", "firstname": "Marilyn", "number": "01818118190", "address": ""}
 		text = json.dumps(entry2)
 		r = requests.post(URL + "create", data=text)
 		assert r.status_code == 201
-		entry3 = {"surname": "Mattingly", "firstname": "Ken", "number": "01818118191"}
+		entry3 = {"surname": "Mattingly", "firstname": "Ken", "number": "01818118191", "address": ""}
 		text = json.dumps(entry3)
 		r = requests.post(URL + "create", data=text)
 		assert r.status_code == 201
-		entry4 = {"surname": "Haise", "firstname": "Fred", "number": "01818118192"}
+		entry4 = {"surname": "Haise", "firstname": "Fred", "number": "01818118192", "address": ""}
 		text = json.dumps(entry4)
 		r = requests.post(URL + "create", data=text)
 		assert r.status_code == 201
@@ -238,7 +238,7 @@ class PhoneBookTest(unittest.TestCase):
 		text = json.dumps(entry)
 		r = requests.post(URL + "search", data=text)
 		assert r.status_code == 400
-		assert r.text == "Unsupported field."
+		assert r.text == "Missing compulsory field." or r.text == "Unsupported field."
 
 		#test an entry including an unspported field
 		entry = {"surname": "Lovell", "firstname": "Jack"}
