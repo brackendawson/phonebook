@@ -361,7 +361,29 @@ class PhoneBookTest(unittest.TestCase):
 		assert r.status_code == 400
 		assert r.text == "Bad request data."
 
-	#bobby tables
+	def test_1_bobby_tables(self):
+		#try to inject SQL
+		entry = {"surname": "Heywood", "firstname": "Floyd", "number": "01818118196", "address": ""}
+		text = json.dumps(entry)
+		r = requests.post(URL + "create", data=text)
+		assert r.status_code == 201
+		entry = {"surname": "Heywood'); DROP TABLE phonebook;", "firstname": "Floyd; DROP TABLE phonebook;", "number": "01818118196; DROP TABLE phonebook;", "address": ";DROP TABLE phonebook;"}
+		text = json.dumps(entry)
+		r = requests.post(URL + "remove", data=text)
+		r = requests.get(URL)
+		assert r.status_code == 200 #not 204
+
+		entry = {"surname": "Poole'); DROP TABLE phonebook;", "firstname": "Frank; DROP TABLE phonebook;", "number": "01818118195'; DROP TABLE phonebook;", "address": ";DROP TABLE phonebook;"}
+		text = json.dumps(entry)
+		r = requests.post(URL + "create", data=text)
+		r = requests.get(URL)
+		assert r.status_code == 200 #not 204
+
+		entry = {"surname": "'); DROP TABLE phonebook;"}
+		text = json.dumps(entry)
+		r = requests.post(URL + "search", data=text)
+		r = requests.get(URL)
+		assert r.status_code == 200 #not 204
 
 if __name__ == '__main__':
 	unittest.main()
