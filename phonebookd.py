@@ -62,6 +62,7 @@ class PhoneBook():
 			return(409, "Duplicate entry.");
 
 		c = db.execute("INSERT INTO phonebook (surname, firstname, number, address) VALUES (?, ?, ?, ?);", (surname, firstname, number, address))
+		db.commit()
 		return(201, "")
 
 	@staticmethod
@@ -88,6 +89,7 @@ class PhoneBook():
 			return(404, "No such entry.");
 
 		c = db.execute("DELETE FROM phonebook WHERE surname=? AND firstname=? AND number=? AND address=?;", (surname, firstname, number, address))
+		db.commit()
 		return(201, "")
 	
 	@staticmethod
@@ -146,6 +148,7 @@ class PhoneBook():
 		#change it
 		c = db.execute("UPDATE phonebook SET surname=?, firstname=?, number=?, address=? WHERE surname=? AND firstname=? AND number=? AND address=?;",
 			(newsurname, newfirstname, newnumber, newaddress, surname, firstname, number, address))
+		db.commit()
 		return(201, "")
 
 class PhoneBookHTTPHandler(http.server.BaseHTTPRequestHandler):
