@@ -76,13 +76,11 @@ class PhoneBook():
 			surname = entry["surname"]
 			firstname = entry["firstname"]
 			number = entry["number"]
+			address = entry["address"]
 		except KeyError:
 			return(400, "Missing compulsory field.")
 		if not surname or not firstname or not number:
 			return(400, "Missing compulsory field.")
-		address = ""
-		if "address" in entry.keys():
-			address = entry["address"]
 		
 		#check entry exists
 		c = db.execute("SELECT EXISTS(SELECT 1 FROM phonebook WHERE surname=? AND firstname=? AND number=? AND address=? LIMIT 1);", (surname, firstname, number, address))
@@ -117,7 +115,38 @@ class PhoneBook():
 		if len(data) == 0:
 			return(404, "")
 		return(200, json.dumps(data))
-		
+
+	@staticmethod
+	def update(data):
+		try:
+			entry = json.loads(data)
+		except ValueError:
+			return(400, "Bad request data.")
+		if not type(entry) is dict:
+			return(400, "Bad request data.")
+		try:
+			surname = entry["surname"]
+			firstname = entry["firstname"]
+			number = entry["number"]
+			address = entry["address"]
+			newsurname = entry["newsurname"]
+			newfirstname = entry["newfirstname"]
+			newnumber = entry["newnumber"]
+			newaddress = entry["newaddress"]
+		except KeyError:
+			return(400, "Missing compulsory field.")
+		if not surname or not newsurname or not firstname or not newfirstname or not number or not newnumber:
+			return(400, "Missing compulsory field.")
+
+		#check entry exists
+		c = db.execute("SELECT EXISTS(SELECT 1 FROM phonebook WHERE surname=? AND firstname=? AND number=? AND address=? LIMIT 1);", (surname, firstname, number, address))
+		if not c.fetchone() == (1,):
+			return(404, "No such entry.");
+
+		#change it
+		c = db.execute("UPDATE phonebook SET surname=?, firstname=?, number=?, address=? WHERE surname=? AND firstname=? AND number=? AND address=?;",
+			(newsurname, newfirstname, newnumber, newaddress, surname, firstname, number, address))
+		return(201, "")
 
 class PhoneBookHTTPHandler(http.server.BaseHTTPRequestHandler):
 
@@ -140,18 +169,21 @@ class PhoneBookHTTPHandler(http.server.BaseHTTPRequestHandler):
 		self.wfile.write(bytes(data, "utf-8"))
 
 	def do_POST(self):
-		data = self.rfile.read(int(self.headers.get("Content-Length"))).decode("utf-8")
 		try:
-			(response, data) = PhoneBook.handle_post(self.path, data)
+			data = self.rfile.read(int(self.headers.get("Content-Length"))).decode("utf-8", "strict")
+			(response, backdata) = PhoneBook.handle_post(self.path, data)
+		except UnicodeDecodeError:
+			response = 400
+			data = "Bad request data."
 		except:
 			response = 500
 			data = "Server Error"
 			print(traceback.format_exc())
 		self.send_response(response)
 		self.send_header("Content-type", "application/json")
-		self.send_header('Content-Length', str(len(data)))
+		self.send_header('Content-Length', str(len(backdata)))
 		self.end_headers()
-		self.wfile.write(bytes(data, "utf-8"))
+		self.wfile.write(bytes(backdata, "utf-8"))
 
 db = sqlite3.connect(DATABASE)
 c = db.execute("SELECT SQLITE_VERSION()")
